@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-
 import styled from "styled-components";
+import piexif, {TagValues, dump, insert} from "piexif-ts";
 
 // Define styled components for styling
 const WebcamContainer = styled.div`
@@ -102,17 +102,50 @@ const WebcamCapture = () => {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         // Get image data URL from canvas
-        const imageDataUrl = canvas.toDataURL("image/jpeg");
+        let imageDataUrl = canvas.toDataURL("image/jpeg");
 
-        // Set the captured image
-        setCapturedImage(imageDataUrl);
+        // Convert DataURL to binary string
+        let imageData = imageDataUrl.replace("data:image/jpeg;base64,", "");
+        // let binary = atob(imageData);
 
+        // Add EXIF metadata (e.g., UserComment or ImageDescription)
+        let exifObj = {
+          "0th": {
+            [TagValues.ImageIFD.Make]: "Custom Webcam",
+            [TagValues.ImageIFD.Model]: "Webcam Capture",
+            [TagValues.ImageIFD.ImageDescription]: "Captured using webcam",
+            [TagValues.ImageIFD.Software]: "Custom App v1.0",
+          },
+          "Exif": {
+            [TagValues.ExifIFD.UserComment]: "This is a custom comment.",
+          },
+        };
+
+        // Convert EXIF object to binary
+        let exifBytes = dump(exifObj);
+
+        // Insert EXIF data into the image binary string
+        let newImageData = insert(exifBytes, imageDataUrl);
+
+        // Set the captured image with metadata
+        setCapturedImage(newImageData);
+        
+        saveImage(newImageData, "captured_image_with_metadata");
+        
         // Stop the webcam
         stopWebcam();
-
-        // You can do something with the captured image here, like save it to state or send it to a server
       }
     }
+  };
+
+  const saveImage = (imageDataUrl: any, fileName: any) => {
+    // Create a Blob from the Data URL
+    const link = document.createElement("a");
+    link.href = imageDataUrl; // Set the URL for the Blob
+    link.download = `${fileName}.jpg`; // Set the filename for download
+    document.body.appendChild(link); // Append to body (required for Firefox)
+    link.click(); // Trigger the download
+    document.body.removeChild(link); // Clean up
   };
 
   // Function to reset state (clear media stream and refs)
