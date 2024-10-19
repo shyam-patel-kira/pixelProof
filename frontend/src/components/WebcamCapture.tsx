@@ -57,9 +57,9 @@ const WebcamCapture = () => {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    startWebcam();
-  }, []);
+  // useEffect(() => {
+  //   startWebcam();
+  // }, []);
 
   const startWebcam = async () => {
     try {
@@ -92,22 +92,43 @@ const WebcamCapture = () => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
-
+  
       // Set canvas dimensions to match video stream
       if (context && video.videoWidth && video.videoHeight) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-
+  
         // Draw video frame onto canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+  
         // Get image data URL from canvas
         let imageDataUrl = canvas.toDataURL("image/jpeg");
-
+  
+        // Extract pixel data from the canvas and convert to matrix
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data; // This contains RGBA values in a single array
+  
+        // Convert the data array into a matrix format
+        const matrix = [];
+        for (let y = 0; y < canvas.height; y++) {
+          const row = [];
+          for (let x = 0; x < canvas.width; x++) {
+            const offset = (y * canvas.width + x) * 4;
+            const red = data[offset];
+            const green = data[offset + 1];
+            const blue = data[offset + 2];
+            const alpha = data[offset + 3];
+            row.push([red, green, blue, alpha]); // Each pixel as [R, G, B, A]
+          }
+          matrix.push(row); // Add the row to the matrix
+        }
+  
+        // Log the matrix to the console
+        console.log("Pixel Matrix:", matrix);
+  
         // Convert DataURL to binary string
-        let imageData = imageDataUrl.replace("data:image/jpeg;base64,", "");
-        // let binary = atob(imageData);
-
+        let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
+  
         // Add EXIF metadata (e.g., UserComment or ImageDescription)
         let exifObj = {
           "0th": {
@@ -120,13 +141,13 @@ const WebcamCapture = () => {
             [TagValues.ExifIFD.UserComment]: "This is a custom comment.",
           },
         };
-
+  
         // Convert EXIF object to binary
         let exifBytes = dump(exifObj);
-
+  
         // Insert EXIF data into the image binary string
         let newImageData = insert(exifBytes, imageDataUrl);
-
+  
         // Set the captured image with metadata
         setCapturedImage(newImageData);
         
@@ -137,6 +158,8 @@ const WebcamCapture = () => {
       }
     }
   };
+  
+  
 
   const saveImage = (imageDataUrl: any, fileName: any) => {
     // Create a Blob from the Data URL
