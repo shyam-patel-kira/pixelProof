@@ -51,6 +51,28 @@ const Capture = () => {
     }
   };
 
+  const downloadProof = (proof: any, publicSignals: any) => {
+    const data = {
+      proof,
+      publicSignals,
+    };
+  
+    // Create a Blob from the data
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a link element to trigger the download
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "zk_proof.json";
+  
+    // Trigger the download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Clean up the URL object
+  };
+
   const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -153,6 +175,7 @@ const Capture = () => {
         // Set the captured image with metadata and save to localStorage
         setCapturedImage(newImageData);
         saveImageToLocalStorage(imageId, newImageData);
+        downloadProof(proof, publicSignals);
 
         // Stop the webcam
         stopWebcam();
