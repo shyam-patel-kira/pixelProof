@@ -53,6 +53,17 @@ const WebcamButton = styled.button`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
+// const setup = async () => {
+//   await Promise.all([
+//     import("@noir-lang/noirc_abi").then(module => 
+//       module.default(new URL("@noir-lang/noirc_abi/web/noirc_abi_wasm_bg.wasm", import.meta.url).toString())
+//     ),
+//     import("@noir-lang/acvm_js").then(module => 
+//       module.default(new URL("@noir-lang/acvm_js/web/acvm_js_bg.wasm", import.meta.url).toString())
+//     )
+//   ]);
+//}
+
 const WebcamCapture = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -111,8 +122,10 @@ const WebcamCapture = () => {
   
       // Set canvas dimensions to match video stream
       if (context && video.videoWidth && video.videoHeight) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        // canvas.width = video.videoWidth;
+        // canvas.height = video.videoHeight;
+        canvas.width = 16;
+        canvas.height = 16;
   
         // Draw video frame onto canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -130,21 +143,26 @@ const WebcamCapture = () => {
         for (let y = 0; y < canvas.height; y++) {
           const row = [];
           for (let x = 0; x < canvas.width; x++) {
-            const offset = (y * canvas.width + x) * 4;
+            const offset = (y * canvas.width + x) * 3;
             const red = data[offset];
             const green = data[offset + 1];
             const blue = data[offset + 2];
-            const alpha = data[offset + 3];
-            row.push([red, green, blue, alpha]); // Each pixel as [R, G, B, A]
+            row.push([red, green, blue]); // Each pixel as [R, G, B, A]
           }
           matrix.push(row); // Add the row to the matrix
         }
   
-        const grayscaleData = convertToGrayscale(matrix, 16, 16);
+        const grayscaleDataArray = convertToGrayscale(matrix, canvas.width, canvas.height);
+        const originalMatrixArray = convertRGBMatrixToArray(matrix, canvas.width, canvas.height);
+
         // Log the matrix to the console
         console.log("Pixel Matrix:", matrix);
 
-        await generateProof(grayscaleData);
+        console.log(originalMatrixArray);
+
+        console.log(grayscaleDataArray);
+
+        await generateProof(originalMatrixArray, grayscaleDataArray);
   
         // Convert DataURL to binary string
         let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
@@ -179,9 +197,10 @@ const WebcamCapture = () => {
     }
   };
 
-  const convertToGrayscale = (matrix: number[][][], newWidth: number, newHeight: number): Uint8Array => {
-    const resized = new Uint8Array(newWidth * newHeight);
+  const convertToGrayscale = (matrix: number[][][], newWidth: number, newHeight: number): Uint32Array => {
+    const resized = new Uint32Array(newWidth * newHeight);
     let index = 0;
+    // const my2DArray = Array.from(Array(newHeight), () => new Array(newWidth).fill(0));
     for (let y = 0; y < newHeight; y++) {
       for (let x = 0; x < newWidth; x++) {
         const srcX = Math.floor(x * matrix[0].length / newWidth);
@@ -189,12 +208,30 @@ const WebcamCapture = () => {
         const pixel = matrix[srcY][srcX];
         const gray = Math.floor(0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
         resized[index++] = gray;
+        // my2DArray[x][y] = gray;
       }
     }
     return resized;
   };
 
-  const generateProof = async (imageData: Uint8Array) => {
+  const convertRGBMatrixToArray = (matrix: number[][][], width: number, height: number): Uint32Array => {
+    const resized = new Uint32Array(width * height * 3);
+    let index = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const srcX = Math.floor(x * matrix[0].length / width);
+        const srcY = Math.floor(y * matrix.length / height);
+        const pixel = matrix[srcY][srcX];
+        resized[index] = pixel[0];
+        resized[index + width * height] = pixel[1];
+        resized[index + 2*(width * height)] = pixel[2];
+        index++;
+      }
+    }
+    return resized;
+  }
+
+  const generateProof = async (input1: any, input2: any) => {
     if (!noir) {
       console.error("Noir not initialized");
       return;
@@ -202,8 +239,9 @@ const WebcamCapture = () => {
 
     try {
       console.log('Generating proof... ⌛');
-      const input = { image: Array.from(imageData) };
-      const { proof, publicInputs } = await backend.generateProof(input as unknown as Uint8Array);
+      const input = { orig_image: input1, gray_image: input2};
+      const { witness } = await noir.execute(input);
+      const { proof, publicInputs } = await backend.generateProof(witness);
       setProof(proof);
       console.log('Proof generated! ✅');
       console.log('Public inputs:', publicInputs);
