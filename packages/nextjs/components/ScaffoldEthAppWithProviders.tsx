@@ -22,9 +22,9 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     console.log("is connected changed!");
 
-    if(!isConnected) {
-      router.push("/");
-    }
+    // if(!isConnected) {
+    //   router.push("/");
+    // }
   }, [isConnected]);
 
   return (
