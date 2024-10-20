@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <style>
+      .title { font: bold 24px sans-serif; }
+      .box { fill: #f0f0f0; stroke: #333; stroke-width: 2; rx: 10; ry: 10; }
+      .label { font: 14px sans-serif; }
+      .arrow { fill: none; stroke: #666; stroke-width: 2; marker-end: url(#arrowhead); }
+      .decision { fill: #f0f0f0; stroke: #333; stroke-width: 2; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" />
+    </marker>
+  </defs>
+  
+  <text x="400" y="30" text-anchor="middle" class="title">PixelProof Flow Diagram</text>
+  
+  <!-- Start -->
+  <ellipse cx="400" cy="70" rx="60" ry="30" class="box" />
+  <text x="400" y="75" text-anchor="middle" class="label">Start</text>
+  
+  <!-- Input Images -->
+  <rect x="320" y="120" width="160" height="40" class="box" />
+  <text x="400" y="145" text-anchor="middle" class="label">Input Color &amp; Grayscale Images</text>
+  
+  <!-- Node.js Input Generator -->
+  <rect x="320" y="190" width="160" height="40" class="box" />
+  <text x="400" y="215" text-anchor="middle" class="label">Node.js Input Generator</text>
+  
+  <!-- JSON Input -->
+  <rect x="320" y="260" width="160" height="40" class="box" />
+  <text x="400" y="285" text-anchor="middle" class="label">Generate JSON Input</text>
+  
+  <!-- Circom Circuit -->
+  <rect x="320" y="330" width="160" height="40" class="box" />
+  <text x="400" y="355" text-anchor="middle" class="label">Compile Circom Circuit</text>
+  
+  <!-- Generate Proof -->
+  <rect x="320" y="400" width="160" height="40" class="box" />
+  <text x="400" y="425" text-anchor="middle" class="label">Generate ZK Proof</text>
+  
+  <!-- Verify Proof -->
+  <path d="M320 470 L480 470 L400 510 Z" class="decision" />
+  <text x="400" y="490" text-anchor="middle" class="label">Verify Proof</text>
+  
+  <!-- Proof Valid -->
+  <rect x="220" y="530" width="160" height="40" class="box" />
+  <text x="300" y="555" text-anchor="middle" class="label">Proof Valid</text>
+  
+  <!-- Proof Invalid -->
+  <rect x="420" y="530" width="160" height="40" class="box" />
+  <text x="500" y="555" text-anchor="middle" class="label">Proof Invalid</text>
+  
+  <!-- Arrows -->
+  <path d="M400 100 V120" class="arrow" />
+  <path d="M400 160 V190" class="arrow" />
+  <path d="M400 230 V260" class="arrow" />
+  <path d="M400 300 V330" class="arrow" />
+  <path d="M400 370 V400" class="arrow" />
+  <path d="M400 440 V470" class="arrow" />
+  <path d="M320 490 H300 V530" class="arrow" />
+  <path d="M480 490 H500 V530" class="arrow" />
+  
+  <!-- Labels -->
+  <text x="520" y="480" class="label">No</text>
+  <text x="280" y="480" class="label">Yes</text>
+</svg>
