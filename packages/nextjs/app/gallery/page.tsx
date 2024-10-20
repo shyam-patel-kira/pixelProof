@@ -2,19 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface Image {
-    imageId: string;
-    version: number;
-    wallet: string;
-    data: string;
-    proof?: string;
-}
-
-interface ImageGallery {
-    [key: string]: Image[]
-}
-
+import {Image, ImageGallery} from "../../utils/types";
 
 const Gallery: React.FC = () => {
   const [images, setImages] = useState<ImageGallery>({});

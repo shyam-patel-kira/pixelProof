@@ -7,6 +7,7 @@ import { useAccount } from 'wagmi';
 const snarkjs = require("snarkjs");
 import { promises as fs } from 'fs';
 import { error } from "console";
+import {Image, ImageGallery, ImageOperation} from "../../utils/types";
 
 
 // const wc = require("../../circuits/no_round_grayscale/no_round_js/witness_calculator.js");
@@ -171,9 +172,15 @@ const Capture = () => {
   };
 
   const saveImageToLocalStorage = (imageId: string, imageDataUrl: string) => {
-    const gallery = JSON.parse(localStorage.getItem("webcamGallery") || "{}");
+    const gallery: ImageGallery = JSON.parse(localStorage.getItem("webcamGallery") || "{}");
     const image = gallery[imageId] !== undefined ? gallery[imageId] : [];
-    image.push({"imageId": imageId, "version": 0, "wallet": account.address, data: imageDataUrl})
+    image.push({
+      "imageId": imageId, 
+      "version": 0, 
+      "wallet": account.address, 
+      data: imageDataUrl, 
+      operation: ImageOperation.Capture
+    });
     gallery[imageId] = image;
     localStorage.setItem("webcamGallery", JSON.stringify(gallery));
   };

@@ -1,18 +1,6 @@
 "use client"
 
-import { useRouter } from 'next/router';
-
-interface Image {
-    imageId: string;
-    version: number;
-    wallet: string;
-    data: string;
-    proof?: string;
-}
-
-interface GalleryImageProps {
-    image: Image | null;
-}
+import {Image, ImageGallery} from "../../../utils/types";
 
 const GalleryImage = ({ params }: { params: { id: string } }) => {
     const images: Image[] = getImages(params.id);
