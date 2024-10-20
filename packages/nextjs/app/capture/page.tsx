@@ -133,21 +133,17 @@ const Capture = () => {
         // Convert DataURL to binary string
         let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
 
+        const imageId = uuidv4();
+
         // Add EXIF metadata
         let exifObj = {
           "0th": {
-            [TagValues.ImageIFD.Make]: "Custom Webcam",
-            [TagValues.ImageIFD.Model]: "Webcam Capture",
-            [TagValues.ImageIFD.ImageDescription]: "Captured using webcam",
-            [TagValues.ImageIFD.Software]: "Custom App v1.0",
-          },
-          "Exif": {
-            [TagValues.ExifIFD.UserComment]: JSON.stringify({
-              imageId: uuidv4(),
-              versionId: 0,
+            [TagValues.ImageIFD.Model]: JSON.stringify({
+              imageId: imageId,
+              version: 0,
               wallet: account.address,
             }),
-          },
+          }
         };
 
         let exifBytes = dump(exifObj);
@@ -155,7 +151,7 @@ const Capture = () => {
 
         // Set the captured image with metadata and save to localStorage
         setCapturedImage(newImageData);
-        saveImageToLocalStorage(newImageData);
+        saveImageToLocalStorage(imageId, newImageData);
 
         // Stop the webcam
         stopWebcam();
@@ -174,9 +170,11 @@ const Capture = () => {
     return grayScaled;
   };
 
-  const saveImageToLocalStorage = (imageDataUrl: string) => {
-    const gallery = JSON.parse(localStorage.getItem("webcamGallery") || "[]");
-    gallery.push(imageDataUrl);
+  const saveImageToLocalStorage = (imageId: string, imageDataUrl: string) => {
+    const gallery = JSON.parse(localStorage.getItem("webcamGallery") || "{}");
+    const image = gallery[imageId] !== undefined ? gallery[imageId] : [];
+    image.push({"imageId": imageId, "version": 0, "wallet": account.address, data: imageDataUrl})
+    gallery[imageId] = image;
     localStorage.setItem("webcamGallery", JSON.stringify(gallery));
   };
 
