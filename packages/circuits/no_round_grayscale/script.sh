@@ -23,6 +23,9 @@ snarkjs groth16 prove no_round_0001.zkey witness.wtns proof.json public.json
 # Verify proof
 snarkjs groth16 verify verification_key.json public.json proof.json
 
+# Generate onchain verifier
+snarkjs zkey export solidityverifier no_round_0001.zkey verifier.sol
+
 # Generate parameters
 snarkjs generatecall >> parameters.json
 
