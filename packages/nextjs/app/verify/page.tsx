@@ -71,7 +71,7 @@ const Verify = () => {
 
   return (
     <div className="container">
-      <h1 className="title">Verify Image and ZK Proof</h1>
+      <h1 className="text-center text-lg">Verify Image and ZK Proof</h1>
 
       {/* Image Upload Input */}
       <input className="file-input" type="file" accept="image/*" onChange={handleImageChange} />

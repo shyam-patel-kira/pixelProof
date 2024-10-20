@@ -84,8 +84,8 @@ const Capture = () => {
         // canvas.width = video.videoWidth;
         // canvas.height = video.videoHeight;
 
-        canvas.width = 20;
-        canvas.height = 10;
+        canvas.width = 640;
+        canvas.height = 480;
 
         // Draw video frame onto canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
