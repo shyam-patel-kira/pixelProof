@@ -166,7 +166,8 @@ const Capture = () => {
               version: 0,
               wallet: account.address,
               proof: proof,
-              publicSignal: publicSignals
+              publicSignal: publicSignals,
+              operation: ImageOperation.Capture
             }),
           }
         };

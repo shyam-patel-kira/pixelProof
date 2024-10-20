@@ -10,7 +10,7 @@ const GalleryImage = ({ params }: { params: { id: string } }) => {
     }
 
     return images.map(image => (
-        <div className='relative w-full max-w-[400px] mx-auto mt-10'>
+        <div className='relative w-full max-w-[400px] mx-auto mt-10' key={image.imageId}>
             <img src={image.data} alt={`Image ${image.imageId}`} className='w-full rounded-lg'/>
         </div>
     ));
