@@ -2,13 +2,18 @@
 
 import React, { useState } from 'react';
 import { load, TagValues } from "piexif-ts";
+import { ethers } from 'ethers';
 const snarkjs = require("snarkjs");
-
+import YourContractABI from '../verify/contract.json';
 const Verify = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<string | null>(null);
   const [zkProof, setZkProof] = useState<any>(null);
   const [publicSignals, setPublicSignals] = useState<any>(null);
+   // Ethereum provider (MetaMask or any other provider)
+   const provider = new ethers.providers.Web3Provider(window.ethereum);
+   const contractAddress = ""; // Replace with your contract address
+   const contract = new ethers.Contract("0x02831dbc00bc6832752496c00b354bd1a1246406", YourContractABI, provider);
 
   // Read the image file selected by the user
   const handleImageChange = (event: any) => {
@@ -58,8 +63,28 @@ const Verify = () => {
 
       // Validate the ZK proof
       const res = await snarkjs.groth16.verify(verificationData, publicSignals, zkProof);
+
       if (res === true) {
-        setVerificationResult("Verification Successful!");
+        
+          setVerificationResult("Verification Successful!");
+          console.log(zkProof)
+        const temp  = [
+            [zkProof.pi_b[0][1], zkProof.pi_b[0][0]],
+            [zkProof.pi_b[1][1], zkProof.pi_b[1][0]]
+          ]
+          // Prepare proof parameters for the smart contract call
+          const _pA = zkProof.pi_a.slice(0, 2); // Assuming zkProof contains proof.A
+          const _pB = temp; // Assuming zkProof contains proof.B
+          const _pC = zkProof.pi_c.slice(0, 2); // Assuming zkProof contains proof.C
+          const _pubSignals = publicSignals[0]; // Public signals
+  
+          // Call the smart contract verifyProof function
+          const result = await contract.verifyProof(_pA, _pB, _pC, [_pubSignals]);
+          if (result) {
+            setVerificationResult("Smart Contract Verification Successful!");
+          } else {
+            setVerificationResult("Smart Contract Verification Failed.");
+          }
       } else {
         setVerificationResult("Invalid Proof.");
       }
