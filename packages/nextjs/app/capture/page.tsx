@@ -4,6 +4,11 @@ import React, { useState, useRef, useEffect } from "react";
 import piexif, { TagValues, dump, insert } from "piexif-ts";
 import { v4 as uuidv4 } from 'uuid';
 import { useAccount } from 'wagmi';
+const snarkjs = require("snarkjs");
+const fs = require("fs");
+
+// const wc = require("../../circuits/no_round_grayscale/no_round_js/witness_calculator.js");
+// const { readFileSync, writeFile } = require("fs");
 
 const Capture = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -43,7 +48,7 @@ const Capture = () => {
     }
   };
 
-  const captureImage = () => {
+  const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -54,8 +59,8 @@ const Capture = () => {
         // canvas.width = video.videoWidth;
         // canvas.height = video.videoHeight;
 
-        canvas.width = 16;
-        canvas.height = 16;
+        canvas.width = 20;
+        canvas.height = 10;
 
         // Draw video frame onto canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -92,6 +97,21 @@ const Capture = () => {
 
         const positiveRemainders = new Array(grayscaleDataArray.length).fill(1000);
         const negativeRemainders = new Array(grayscaleDataArray.length).fill(0);
+
+        const input = {
+          "orig" : originalMatrixArray,
+          "gray" : grayscaleDataArray,
+          "positiveRemainder" : positiveRemainders,
+          "negativeRemainder" : negativeRemainders
+        };
+
+        const wasmFilePath = "../../no_round_js/no_round.wasm";
+        const zKeyFikePath = "../../no_round_0001.zkey";
+        const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmFilePath, zKeyFikePath);
+        console.log("Proof: ");
+        console.log(JSON.stringify(proof, null, 1));
+        console.log("Public Signals: ");
+        console.log(JSON.stringify(publicSignals));
 
         // Convert DataURL to binary string
         let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
