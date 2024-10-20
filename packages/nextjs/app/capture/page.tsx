@@ -82,8 +82,8 @@ const Capture = () => {
         }
 
         const originalMatrixArray = [];
-        for(let x = 0; matrix.length; x++){
-          for(let y = 0; matrix[0].length; y++) {
+        for(let x = 0; x < matrix.length; x++){
+          for(let y = 0; y <  matrix[x].length; y++) {
             originalMatrixArray.push(matrix[x][y]);
           }
         }
