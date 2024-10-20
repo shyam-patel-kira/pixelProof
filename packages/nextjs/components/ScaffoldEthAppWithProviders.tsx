@@ -12,16 +12,27 @@ import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { ProgressBar } from "~~/components/scaffold-eth/ProgressBar";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
+import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useInitializeNativeCurrencyPrice();
+  const { isConnected } = useAccount();
+  const router = useRouter();
+  useEffect(() => {
+    console.log("is connected changed!");
+
+    if(!isConnected) {
+      router.push("/");
+    }
+  }, [isConnected]);
 
   return (
     <>
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="relative flex flex-col flex-1">{children}</main>
-        <Footer />
+        {/* <Footer /> */}
       </div>
       <Toaster />
     </>

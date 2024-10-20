@@ -38,6 +38,7 @@
   },
   "packageManager": "yarn@3.2.3",
   "devDependencies": {
+    "@types/uuid": "^10.0.0",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3"
   },
@@ -45,7 +46,7 @@
     "node": ">=18.17.0"
   },
   "dependencies": {
-    "canvas": "^2.11.2",
-    "global": "^4.4.0"
+    "piexif-ts": "^2.1.0",
+    "uuid": "^10.0.0"
   }
 }
