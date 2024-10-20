@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { load, TagValues } from "piexif-ts";
-import type { Image } from "../../utils/types";
 const snarkjs = require("snarkjs");
 
 const Verify = () => {
-  const [imageSrc, setImageSrc] = useState<any>(null);
-  const [processedSrc, setProcessedSrc] = useState<any>(null);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [verificationResult, setVerificationResult] = useState<string | null>(null);
   const [zkProof, setZkProof] = useState<any>(null);
   const [publicSignals, setPublicSignals] = useState<any>(null);
 
@@ -18,13 +17,24 @@ const Verify = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target) {
-          const dataUrl = e.target.result;
+          const dataUrl = e.target.result as string;
           setImageSrc(dataUrl); // Display the image
-          const exifData = load(dataUrl as string);
-          console.log(exifData);
-          if (exifData['0th']) {
-            const deviceMode: Image = JSON.parse(exifData['0th'][TagValues.ImageIFD.Model]);
-            console.log(deviceMode.imageId);
+
+          try {
+            const exifData = load(dataUrl); // Load EXIF data
+            console.log("EXIF Data:", exifData);
+
+            // Check if EXIF data contains the required proof and signals
+            if (exifData['0th']) {
+              const proofData = JSON.parse(exifData['0th'][TagValues.ImageIFD.Model]);
+              console.log("Proof Data:", proofData);
+
+              // Set zkProof and publicSignals
+              setZkProof(proofData.proof); // Use the extracted proof
+              setPublicSignals(proofData.publicSignal); // Use the extracted public signals
+            }
+          } catch (error) {
+            console.error("Error reading EXIF data:", error);
           }
         }
       };
@@ -32,26 +42,10 @@ const Verify = () => {
     }
   };
 
-  // Function to handle the ZK proof upload
-  const handleProofChange = (event: any) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target) {
-          const proofData = JSON.parse(e.target.result as string);
-          setZkProof(proofData.proof); // Assuming 'proof' is the key in your JSON
-          setPublicSignals(proofData.publicSignals); // Assuming 'publicSignals' is also a key
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
   // Function to validate ZK proof using snarkjs
   const validateProof = async () => {
     if (!zkProof || !publicSignals) {
-      console.log("Please upload ZK proof and public signals");
+      setVerificationResult("No proof or public signals found.");
       return;
     }
 
@@ -60,96 +54,112 @@ const Verify = () => {
       if (!response.ok) {
         throw new Error("Failed to fetch verification key!");
       }
-      const verificationData = await response.text();
-      const vKey = JSON.parse(verificationData);
+      const verificationData = await response.json();
 
       // Validate the ZK proof
-      const res = await snarkjs.groth16.verify(vKey, publicSignals, zkProof);
+      const res = await snarkjs.groth16.verify(verificationData, publicSignals, zkProof);
       if (res === true) {
-        console.log("Verification OK");
+        setVerificationResult("Verification Successful!");
       } else {
-        console.log("Invalid proof");
+        setVerificationResult("Invalid Proof.");
       }
     } catch (error) {
       console.error("Error during proof validation:", error);
+      setVerificationResult("Error during proof validation.");
     }
   };
 
-  // Perform an operation on the image (e.g., grayscale filter)
-  const applyFilter = () => {
-    if (!imageSrc) return;
-
-    const img = new Image();
-    img.src = imageSrc;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        return;
-      }
-
-      // Set canvas dimensions to match the image
-      canvas.width = img.width;
-      canvas.height = img.height;
-
-      // Draw the original image on the canvas
-      ctx.drawImage(img, 0, 0);
-
-      // Get the image data
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      // Apply a grayscale filter to the image
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        // Calculate the grayscale value
-        const gray = 0.3 * r + 0.59 * g + 0.11 * b;
-        // Set the red, green, and blue channels to the grayscale value
-        data[i] = data[i + 1] = data[i + 2] = gray;
-      }
-
-      // Put the modified data back to the canvas
-      ctx.putImageData(imageData, 0, 0);
-
-      // Convert the canvas back to an image and display it
-      setProcessedSrc(canvas.toDataURL());
-    };
-  };
-
   return (
-    <div>
-      <h1>Verify Image and ZK Proof</h1>
+    <div className="container">
+      <h1 className="title">Verify Image and ZK Proof</h1>
 
       {/* Image Upload Input */}
-      <input type="file" accept="image/*" onChange={handleImageChange} />
+      <input className="file-input" type="file" accept="image/*" onChange={handleImageChange} />
       {imageSrc && (
-        <div>
-          <h2>Original Image</h2>
-          <img src={imageSrc} alt="Original" style={{ maxWidth: '300px' }} />
+        <div className="image-container">
+          <h2 className="subtitle">Uploaded Image</h2>
+          <img src={imageSrc} alt="Uploaded" className="image-preview" />
         </div>
       )}
 
-      {/* Button to Apply Filter */}
-      <button onClick={applyFilter} disabled={!imageSrc}>
-        Apply Grayscale Filter
-      </button>
-      {processedSrc && (
-        <div>
-          <h2>Processed Image</h2>
-          <img src={processedSrc} alt="Processed" style={{ maxWidth: '300px' }} />
+      {/* Show Validate ZK Proof Button when proof and signals are available */}
+      {zkProof && publicSignals && (
+        <button className="btn" onClick={validateProof}>
+          Validate ZK Proof
+        </button>
+      )}
+
+      {/* Display Verification Result */}
+      {verificationResult && (
+        <div className={`verification-result ${verificationResult.includes("Successful") ? "success" : "error"}`}>
+          {verificationResult}
         </div>
       )}
 
-      {/* ZK Proof Upload Input */}
-      <input type="file" accept=".json" onChange={handleProofChange} />
-      
-      {/* Button to Validate ZK Proof */}
-      <button onClick={validateProof} disabled={!zkProof || !publicSignals}>
-        Validate ZK Proof
-      </button>
+      <style jsx>{`
+        .container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
+          font-family: Arial, sans-serif;
+        }
+
+        .title {
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          color: #333;
+        }
+
+        .subtitle {
+          font-size: 20px;
+          margin-bottom: 10px;
+          color: #555;
+        }
+
+        .file-input {
+          margin-bottom: 20px;
+        }
+
+        .image-container {
+          margin: 20px 0;
+        }
+
+        .image-preview {
+          max-width: 300px;
+          border: 2px solid #ddd;
+          border-radius: 8px;
+        }
+
+        .btn {
+          padding: 10px 20px;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          margin-bottom: 20px;
+        }
+
+        .verification-result {
+          font-size: 18px;
+          padding: 10px;
+          border-radius: 5px;
+          margin-top: 20px;
+          text-align: center;
+        }
+
+        .success {
+          background-color: #d4edda;
+          color: #155724;
+        }
+
+        .error {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+      `}</style>
     </div>
   );
 };

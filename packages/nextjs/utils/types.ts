@@ -9,6 +9,7 @@ export interface Image {
     wallet: string | undefined;
     data: string;
     proof?: string;
+    publicSignal?: string;
     operation: ImageOperation;
 }
 

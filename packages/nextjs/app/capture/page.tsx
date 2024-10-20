@@ -165,6 +165,8 @@ const Capture = () => {
               imageId: imageId,
               version: 0,
               wallet: account.address,
+              proof: proof,
+              publicSignal: publicSignals
             }),
           }
         };
@@ -175,7 +177,7 @@ const Capture = () => {
         // Set the captured image with metadata and save to localStorage
         setCapturedImage(newImageData);
         saveImageToLocalStorage(imageId, newImageData);
-        downloadProof(proof, publicSignals);
+        // downloadProof(proof, publicSignals);
 
         // Stop the webcam
         stopWebcam();
