@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
 import piexif, {TagValues, dump, insert} from "piexif-ts";
+import { BarretenbergBackend } from '@noir-lang/backend_barretenberg';
+import { Noir } from '@noir-lang/noir_js';
+import circuit from "./circuit.json";
 
 // Define styled components for styling
 const WebcamContainer = styled.div`
@@ -56,10 +59,19 @@ const WebcamCapture = () => {
 
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [proof, setProof] = useState<Uint8Array | null>(null);
+  const [noir, setNoir] = useState<Noir | null>(null);
+  const backend = new BarretenbergBackend(circuit as any);
 
-  // useEffect(() => {
-  //   startWebcam();
-  // }, []);
+  useEffect(() => {
+    const initNoir = async () => {
+      const noirInstance = new Noir(circuit as any);
+      await noirInstance.init();
+      setNoir(noirInstance);
+      console.log("Noir initialized");
+    };
+    initNoir();
+  }, []);
 
   const startWebcam = async () => {
     try {
@@ -87,7 +99,7 @@ const WebcamCapture = () => {
     }
   };
 
-  const captureImage = () => {
+  const captureImage = async () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -108,6 +120,7 @@ const WebcamCapture = () => {
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data; // This contains RGBA values in a single array
   
+
         // Convert the data array into a matrix format
         const matrix = [];
         for (let y = 0; y < canvas.height; y++) {
@@ -123,8 +136,11 @@ const WebcamCapture = () => {
           matrix.push(row); // Add the row to the matrix
         }
   
+        const grayscaleData = convertToGrayscale(matrix, 16, 16);
         // Log the matrix to the console
         console.log("Pixel Matrix:", matrix);
+
+        await generateProof(grayscaleData);
   
         // Convert DataURL to binary string
         let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
@@ -158,8 +174,46 @@ const WebcamCapture = () => {
       }
     }
   };
-  
-  
+
+  const convertToGrayscale = (matrix: number[][][], newWidth: number, newHeight: number): Uint8Array => {
+    const resized = new Uint8Array(newWidth * newHeight);
+    let index = 0;
+    for (let y = 0; y < newHeight; y++) {
+      for (let x = 0; x < newWidth; x++) {
+        const srcX = Math.floor(x * matrix[0].length / newWidth);
+        const srcY = Math.floor(y * matrix.length / newHeight);
+        const pixel = matrix[srcY][srcX];
+        const gray = Math.floor(0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
+        resized[index++] = gray;
+      }
+    }
+    return resized;
+  };
+
+  const generateProof = async (imageData: Uint8Array) => {
+    if (!noir) {
+      console.error("Noir not initialized");
+      return;
+    }
+
+    try {
+      console.log('Generating proof... ⌛');
+      const input = { image: Array.from(imageData) };
+      const { proof, publicInputs } = await backend.generateProof(input as unknown as Uint8Array);
+      setProof(proof);
+      console.log('Proof generated! ✅');
+      console.log('Public inputs:', publicInputs);
+
+      const verification = await backend.verifyProof({ proof, publicInputs });
+      if (verification) {
+        console.log('Proof verified! ✅');
+      } else {
+        console.log("Proof verification failed ❌");
+      }
+    } catch (error) {
+      console.error("Error generating proof:", error);
+    }
+  };
 
   const saveImage = (imageDataUrl: any, fileName: any) => {
     // Create a Blob from the Data URL
