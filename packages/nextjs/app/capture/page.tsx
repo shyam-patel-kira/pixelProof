@@ -51,14 +51,50 @@ const Capture = () => {
 
       // Set canvas dimensions to match video stream
       if (context && video.videoWidth && video.videoHeight) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        // canvas.width = video.videoWidth;
+        // canvas.height = video.videoHeight;
+
+        canvas.width = 16;
+        canvas.height = 16;
 
         // Draw video frame onto canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         // Get image data URL from canvas
         let imageDataUrl = canvas.toDataURL("image/jpeg");
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data; // This contains RGBA values in a single array
+  
+
+        // Convert the data array into a matrix format
+        const matrix = [];
+        for (let y = 0; y < canvas.height; y++) {
+          const row = [];
+          for (let x = 0; x < canvas.width; x++) {
+            const offset = (y * canvas.width + x) * 3;
+            const red = data[offset];
+            const green = data[offset + 1];
+            const blue = data[offset + 2];
+            row.push([red, green, blue]); // Each pixel as [R, G, B, A]
+          }
+          matrix.push(row); // Add the row to the matrix
+        }
+
+        const originalMatrixArray = [];
+        for(let x = 0; matrix.length; x++){
+          for(let y = 0; matrix[0].length; y++) {
+            originalMatrixArray.push(matrix[x][y]);
+          }
+        }
+
+        const grayscaleDataArray = convertToGrayscale(originalMatrixArray);
+
+        const positiveRemainders = new Array(grayscaleDataArray.length).fill(1000);
+        const negativeRemainders = new Array(grayscaleDataArray.length).fill(0);
+
+        // Convert DataURL to binary string
+        let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
 
         // Add EXIF metadata
         let exifObj = {
@@ -88,6 +124,17 @@ const Capture = () => {
         stopWebcam();
       }
     }
+  };
+
+  const convertToGrayscale = (matrix: number[][]): number[] => {
+    const grayScaled = [];
+    let index = 0;
+    for(let x = 0; x < matrix.length; x++) {
+      const pixel = matrix[x];
+      const gray = Math.floor(0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
+      grayScaled[x] = gray;
+    }
+    return grayScaled;
   };
 
   const saveImageToLocalStorage = (imageDataUrl: string) => {
