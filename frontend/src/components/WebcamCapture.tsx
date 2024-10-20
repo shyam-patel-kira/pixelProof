@@ -64,6 +64,10 @@ const WebcamCapture = () => {
   const backend = new BarretenbergBackend(circuit as any);
 
   useEffect(() => {
+    startWebcam();
+  }, []);
+
+  useEffect(() => {
     const initNoir = async () => {
       const noirInstance = new Noir(circuit as any);
       await noirInstance.init();
