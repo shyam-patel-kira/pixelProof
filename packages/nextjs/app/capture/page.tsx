@@ -5,7 +5,9 @@ import piexif, { TagValues, dump, insert } from "piexif-ts";
 import { v4 as uuidv4 } from 'uuid';
 import { useAccount } from 'wagmi';
 const snarkjs = require("snarkjs");
-const fs = require("fs");
+import { promises as fs } from 'fs';
+import { error } from "console";
+
 
 // const wc = require("../../circuits/no_round_grayscale/no_round_js/witness_calculator.js");
 // const { readFileSync, writeFile } = require("fs");
@@ -106,12 +108,27 @@ const Capture = () => {
         };
 
         const wasmFilePath = "../../no_round_js/no_round.wasm";
-        const zKeyFikePath = "../../no_round_0001.zkey";
+        const zKeyFikePath = "../../no_round_js/no_round_0001.zkey";
         const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmFilePath, zKeyFikePath);
         console.log("Proof: ");
         console.log(JSON.stringify(proof, null, 1));
         console.log("Public Signals: ");
         console.log(JSON.stringify(publicSignals));
+
+        const response = await fetch("no_round_js/verification_key.json");
+        if (!response.ok) {
+          throw new Error("failed to fetch file!!");
+        }
+        const verificationData  =  await response.text();
+        const vKey = JSON.parse(verificationData);
+
+        const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
+
+        if (res === true) {
+            console.log("Verification OK");
+        } else {
+            console.log("Invalid proof");
+        }
 
         // Convert DataURL to binary string
         let imageDataBinary = imageDataUrl.replace("data:image/jpeg;base64,", "");
