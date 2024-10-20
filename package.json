@@ -43,5 +43,9 @@
   },
   "engines": {
     "node": ">=18.17.0"
+  },
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "global": "^4.4.0"
   }
 }
