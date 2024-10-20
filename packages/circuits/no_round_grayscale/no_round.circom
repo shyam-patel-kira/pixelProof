@@ -8,14 +8,14 @@ template GrayscaleChecker(n) {
     signal output n_check;
  
     for (var i = 0; i < n; i++) {      
-        assert(30 * orig[i][0] + 59 * orig[i][1] + 11 * orig[i][2] < 100 * gray[i] - negativeRemainder[i] + positiveRemainder[i]); 
+        assert(30 * orig[i][0] + 59 * orig[i][1] + 11 * orig[i][2] <= 100 * gray[i] - negativeRemainder[i] + positiveRemainder[i]); 
     }
     
     n_check <== n;
 }
 
 // For 10x10 images
-component main = GrayscaleChecker(200);
+component main = GrayscaleChecker(307200);
 
 // For 20x20 images
 // component main20x20 = GrayscaleChecker(400);
