@@ -21,7 +21,6 @@ const Gallery: React.FC = () => {
 
   const handleEdit = (imageId: string) => {
     router.push(`/gallery/${imageId}/edit`);
-    // console.log("Editing image:", image);
   };
 
   return (

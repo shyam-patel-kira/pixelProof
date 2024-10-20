@@ -165,6 +165,7 @@ const Capture = () => {
               imageId: imageId,
               version: 0,
               wallet: account.address,
+              operation: ImageOperation.Capture
             }),
           }
         };
